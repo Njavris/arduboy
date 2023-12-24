@@ -1,15 +1,17 @@
-#include <avr/io.h>
 #include <util/delay.h>
 
-#define LED_RED		PB6
-#define LED_GREEN	PB7
-#define LED_BLUE	PB5
+#include "io.h"
+
 
 int main(void) {
-    DDRD |= 1 << LED_GREEN;
-    while (1) {
-	PORTB ^= 1 << LED_GREEN;
-        _delay_ms(1000);
-    }
-    return 0;
+	io_init();
+	while (1) {
+		if (SW_UP) {
+    			LED_SET(LED_ALL);
+        		_delay_ms(10);
+    			LED_UNSET(LED_ALL);
+		}
+        	_delay_ms(10);
+	}
+	return 0;
 }

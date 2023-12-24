@@ -4,7 +4,7 @@ OBJCOPY = avr-objcopy
 PROGRAMMER = -c usbasp -p $(MCU)
 PROG=test
 
-FILES=main.o
+FILES= io.o main.o
 
 all: $(PROG).hex
 
@@ -16,7 +16,7 @@ $(PROG).hex: $(PROG).elf
 
 
 $(PROG).elf: $(FILES)
-	$(CC) $(CFLAGS) -o $@ $<
+	$(CC) $(CFLAGS) -o $@ $(FILES)
 
 upload: $(PROG).hex
 	avrdude -Cavrdude.conf -v -patmega32u4 -cavr109 -P/dev/ttyACM0 -b57600 -D -Uflash:w:$(PROG).hex:i
