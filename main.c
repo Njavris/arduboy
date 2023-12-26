@@ -5,6 +5,8 @@
 
 int main(void) {
 	io_init();
+	disp_init();
+
 	while (1) {
 		if (SW_UP) {
     			LED_SET(LED_ALL);

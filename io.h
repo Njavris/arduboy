@@ -1,3 +1,5 @@
+#ifndef __IO_H__
+#define __IO_H__
 #include <avr/io.h>
 
 
@@ -33,8 +35,7 @@
 #define SPK_N		(1 << PC7)
 #define SPK		{ PORTC ^= SPK_P | SPK_N; }
 
-#define DISP_DC		(1 << PD4)
-#define DISP_RST	(1 << PD7)
-#define DISP_CS		(1 << PD6)
-
 void io_init(void);
+void disp_init(void);
+
+#endif
