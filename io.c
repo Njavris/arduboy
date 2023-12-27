@@ -19,6 +19,10 @@ void io_init(void) {
 	DDRB &= ~BIT_B;
 	PORTB |= BIT_B;
 
+	// disable ADC and I2C
+	PRR0 = (1 << PRTWI) | (1 << PRADC);
+	// disable USART1
+	PRR1 |= (1 << PRUSART1);
 }
 
 #define DISP_DC		(1 << PD4)
@@ -31,7 +35,7 @@ void io_init(void) {
 
 void spi_init(void) {
 	DDRB |= SPI_MOSI | SPI_CLK;
-	SPCR = (1 << SPE) | (1 << MSTR) | (1 << SPR0);
+	SPCR = (1 << SPE) | (1 << MSTR);
 	SPSR |= (1 << SPI2X);
 }
 
@@ -61,19 +65,19 @@ uint8_t disp_init_seq[] = {
 	0xae,			// off
 	0xa8, 0x3f,		// Multiplex ratio
 	0xd3, 0x00,		// Display offset
-	0x40, 0x00,		// Start line
+	0x40,			// Start line
 	0xa1,			// segment remap
 	0xc8,			// COM output scan dir
-	0x81, 0x7f,		// contrast
+	0x81, 0xcf,		// contrast
 	0xa4,			// entire display on
 	0xa6,			// 0xa6 - normal 0xa7 - invert color
-	0xd5, 0x80,		// Display clock rate div
+	0xd5, 0xf0,		// Display clock rate div
 	0x8d, 0x14,		// Charge pump
 	0x2e,			// Deactivate scroll
 	0x20, 0x01,		// Memory addressing mode 0 - H; 1 - V; 2 - Page;
 	0xda, 0x12,		// COM HW conf
-	0xd9, 0x22,		// Pre-charge Period
-	0xdb, 0x20,		// VCOMH Deselect level
+	0xd9, 0xf1,		// Pre-charge Period
+	0xdb, 0x40,		// VCOMH Deselect level
 	0xaf,			// on
 	0x21, 0x00, 0x7f,	// Col start/end
 	0x22, 0x00, 0x07,	// Page start/end
