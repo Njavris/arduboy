@@ -1,4 +1,5 @@
 #include <util/delay.h>
+#include <avr/interrupt.h>
 #include "io.h"
 
 void io_init(void) {
@@ -102,4 +103,27 @@ void disp_init(void) {
 	for (int i = 0; i < 768; i++)
 		SPI_WRITE_B(0xAA);
 	DISP_CS_DEASSERT;
+}
+
+#define TICKS		60
+#define TIMER_TICK	(16000000 / 1024 / TICKS)
+
+void ticks_init(void) {
+	cli();
+	TCNT1 = 0;
+	OCR1A = TIMER_TICK;
+	TCCR1A = 0x0;
+	TCCR1B = (1 << WGM12) | (1 << CS12)| (1 << CS10);
+	TIMSK1 = (1 << OCIE1A);  
+	TIMSK1 = (1 << OCIE1A);
+	sei();
+}
+
+uint8_t tick_cnt = 0;
+
+ISR(TIMER1_COMPA_vect) {
+	if (++tick_cnt == TICKS) {
+		LED_TOGGLE(LED_ALL);
+		tick_cnt = 0;
+	}
 }
