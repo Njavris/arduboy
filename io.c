@@ -114,7 +114,6 @@ void ticks_init(void) {
 	OCR1A = TIMER_TICK;
 	TCCR1A = 0x0;
 	TCCR1B = (1 << WGM12) | (1 << CS12)| (1 << CS10);
-	TIMSK1 = (1 << OCIE1A);  
 	TIMSK1 = (1 << OCIE1A);
 	sei();
 }

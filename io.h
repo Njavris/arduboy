@@ -37,5 +37,6 @@
 
 void io_init(void);
 void disp_init(void);
+void ticks_init(void);
 
 #endif
