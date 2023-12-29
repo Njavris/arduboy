@@ -75,7 +75,7 @@ uint8_t disp_init_seq[] = {
 	0xd5, 0xf0,		// Display clock rate div
 	0x8d, 0x14,		// Charge pump
 	0x2e,			// Deactivate scroll
-	0x20, 0x01,		// Memory addressing mode 0 - H; 1 - V; 2 - Page;
+	0x20, 0x00,		// Memory addressing mode 0 - H; 1 - V; 2 - Page;
 	0xda, 0x12,		// COM HW conf
 	0xd9, 0xf1,		// Pre-charge Period
 	0xdb, 0x40,		// VCOMH Deselect level
@@ -83,6 +83,13 @@ uint8_t disp_init_seq[] = {
 	0x21, 0x00, 0x7f,	// Col start/end
 	0x22, 0x00, 0x07,	// Page start/end
 };
+
+#define DISP_CLEAR	{		\
+	DISP_CS_ASSERT;			\
+	for (int i = 0; i < 1024; i++)	\
+		SPI_WRITE_B(0x00);	\
+	DISP_CS_DEASSERT;		\
+}
 
 void disp_init(void) {
 	spi_init();
@@ -94,15 +101,7 @@ void disp_init(void) {
 	for (int i = 0; i < sizeof(disp_init_seq) / sizeof(disp_init_seq[0]); i++)
 		disp_cmd(disp_init_seq[i]);
 
-	DISP_CS_ASSERT;
-	for (int i = 0; i < 1024; i++)
-		SPI_WRITE_B(0x00);
-	DISP_CS_DEASSERT;
-
-	DISP_CS_ASSERT;
-	for (int i = 0; i < 768; i++)
-		SPI_WRITE_B(0xAA);
-	DISP_CS_DEASSERT;
+	DISP_CLEAR;
 }
 
 #define TICKS		60
@@ -116,13 +115,22 @@ void ticks_init(void) {
 	TCCR1B = (1 << WGM12) | (1 << CS12)| (1 << CS10);
 	TIMSK1 = (1 << OCIE1A);
 	sei();
+	DISP_CLEAR;
 }
 
-uint8_t tick_cnt = 0;
+uint16_t frame = 0;
 
 ISR(TIMER1_COMPA_vect) {
-	if (++tick_cnt == TICKS) {
-		LED_TOGGLE(LED_ALL);
-		tick_cnt = 0;
+	frame ++;
+	DISP_CS_ASSERT;
+	for (int i = 0; i < 1024; i++) {
+		if (i < frame) {
+			SPI_WRITE_B(0xff);
+		} else {
+			SPI_WRITE_B(0x00);
+		}
 	}
+	DISP_CS_DEASSERT;
+	if (frame == 1024)
+	    frame = 0;
 }
