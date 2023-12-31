@@ -6,6 +6,7 @@
 int main(void) {
 	io_init();
 	disp_init();
+	sound_init();
 	ticks_init();
 
 	while (1) {

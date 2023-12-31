@@ -3,37 +3,34 @@
 #include <avr/io.h>
 
 
-#define LED_RED		(1 << PB6)
-#define LED_GREEN	(1 << PB7)
-#define LED_BLUE	(1 << PB5)
-#define LED_ALL		(LED_RED | LED_GREEN | LED_BLUE)
-#define LED_RX		(1 << PB0)
-#define LED_TX		(1 << PD5)
-
 #define BIT(b)		(1 << (b))
+
+#define LED_RED		BIT(PB6)
+#define LED_GREEN	BIT(PB7)
+#define LED_BLUE	BIT(PB5)
+#define LED_ALL		(LED_RED | LED_GREEN | LED_BLUE)
+#define LED_RX		BIT(PB0)
+#define LED_TX		BIT(PD5)
 
 #define LED_SET(led)	{ PORTB &= ~(led); }
 #define LED_UNSET(led)	{ PORTB |= (led); } 
 #define LED_TOGGLE(led) { PORTB ^= (led); } 
 
-#define BIT_UP		(1 << PINF7)
-#define BIT_RIGHT	(1 << PINF6)
-#define BIT_LEFT	(1 << PINF5)
-#define BIT_DOWN	(1 << PINF4)
-#define BIT_DIR		(BIT_UP | BIT_DOWN | BIT_LEFT | BIT_RIGHT)
-#define BIT_A		(1 << PINE6)
-#define BIT_B		(1 << PINB4)
+extern uint8_t controls;
 
-#define SW_UP		(!(PINF & BIT_UP))
-#define SW_DOWN		(!(PINF & BIT_DOWN))
-#define SW_LEFT		(!(PINF & BIT_LEFT))
-#define SW_RIGHT	(!(PINF & BIT_RIGHT))
-#define SW_A_D		(!(PINE & BIT_A))
-#define SW_B_D		(!(PINB & BIT_B))
+#define CTRL_BIT_DOWN	0
+#define CTRL_BIT_LEFT	1
+#define CTRL_BIT_RIGHT	2
+#define CTRL_BIT_UP	3
+#define CTRL_BIT_A	4	
+#define CTRL_BIT_B	5
+#define CTRL_MASK_DOWN	BIT(CTRL_BIT_DOWN)
+#define CTRL_MASK_LEFT	BIT(CTRL_BIT_LEFT)
+#define CTRL_MASK_RIGHT	BIT(CTRL_BIT_RIGHT)
+#define CTRL_MASK_UP	BIT(CTRL_BIT_UP)
+#define CTRL_MASK_A	BIT(CTRL_BIT_A)
+#define CTRL_MASK_B	BIT(CTRL_BIT_B)
 
-#define SPK_P		(1 << PC6)
-#define SPK_N		(1 << PC7)
-#define SPK		{ PORTC ^= SPK_P | SPK_N; }
 
 void io_init(void);
 void disp_init(void);
