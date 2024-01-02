@@ -124,35 +124,32 @@ void ticks_init(void) {
 #define SPK_P		BIT(PC6)
 #define SPK_N		BIT(PC7)
 
-#define C4	262
-#define C4S	277
-#define D4	294
-#define D4S	311
-#define E4	330
-#define F4	349
-#define F4S	369
-#define G4	392
-#define G4S	415
-#define A4	440
-#define A4S	466
-#define C5	523
+#define V1_PRESC	64
+#define V2_PRESC	64
+#define NOTE(p, f, l)	((((uint16_t)(16000000 / (p) / 2 / (f))) & 0xfff) | ((l) << 1 << 12)) 
+#define VOICE1(f)	{ OCR3A = (f); TCNT3 = 0; }
+#define VOICE2(f)	{ OCR4C = (f); TCNT4 = 0; }
 
-#define PRESC		64
-#define NOTE_CALC(f)	(16000000 / PRESC / 2 / (f))
+/*
+Voice 2 - 10 bit	0-1023
+Voice 1 - 16 bit	0-65535
+*/
 
 void sound_init(void) {
 	// OC4A OC3A
 	DDRC |= SPK_P | SPK_N;
-
 //	PORTC |= SPK_P | SPK_N; 
 
-
+#ifndef MUTE
 	TCCR3A = BIT(COM3A0);
+#endif
 	TCCR3B = BIT(WGM32) | BIT(CS31) | BIT(CS30);
 	TCNT3 = 0;
 	OCR3A = 0;
 
+#ifndef MUTE
 	TCCR4A = BIT(COM4A0);
+#endif
 	TCCR4B = BIT(PWM4X) | BIT(CS42) | BIT(CS41) | BIT(CS40);
 	TCCR4D = BIT(WGM40);
 	TCNT4 = 0;
@@ -161,10 +158,22 @@ void sound_init(void) {
 	OCR4C = 0;
 }
 
-#define VOICE1(f)	{ OCR3A = (f); }
-#define VOICE2(f)	{ OCR4C = (f); }
+#include "notes.h"
+
+uint16_t score[] =  {
+	NOTE(V1_PRESC, D4, 4), NOTE(V1_PRESC, E4, 4), NOTE(V1_PRESC, F4, 4), NOTE(V1_PRESC, G4, 4),
+	NOTE(V1_PRESC, A4, 4), NOTE(V1_PRESC, F4, 4), NOTE(V1_PRESC, D4, 4), NOTE(V1_PRESC, F4, 4),
+	NOTE(V1_PRESC, A4, 2), NOTE(V1_PRESC, B4, 2),
+	NOTE(V1_PRESC, A4, 4), NOTE(V1_PRESC, F4, 4), NOTE(V1_PRESC, D4, 2),
+	NOTE(V1_PRESC, A4, 4), NOTE(V1_PRESC, A4, 4), NOTE(V1_PRESC, G4, 4), NOTE(V1_PRESC, E4, 4),
+	NOTE(V1_PRESC, F4, 4), NOTE(V1_PRESC, F4, 4), NOTE(V1_PRESC, D4, 4), NOTE(V1_PRESC, E4, 4),
+	NOTE(V1_PRESC, F4, 2), NOTE(V1_PRESC, E4, 2),
+	NOTE(V1_PRESC, D4, 1), 
+};
 
 uint16_t cnt = 0;
+uint8_t note = 0;
+uint16_t next = 0;
 
 ISR(TIMER1_COMPA_vect) {
 	// read inputs
@@ -172,6 +181,14 @@ ISR(TIMER1_COMPA_vect) {
 	controls |= ((PINE & BIT(BIT_A)) >> BIT_A) << CTRL_BIT_A;
 	controls |= ((PINB & BIT(BIT_B)) >> BIT_B) << CTRL_BIT_B;
 	controls = ~controls;
-//	VOICE1(NOTE_CALC(C4));
-//	VOICE2(NOTE_CALC(G4));
+
+	if (cnt == next) {
+		VOICE1(score[note] & 0xfff);
+		next = cnt + ((TICKS * 8) / (score[note] >> 12));
+		note++;
+		if (note >= sizeof(score) / sizeof(score[0])) {
+			note = 0;
+		}
+	}
+	cnt ++;
 }

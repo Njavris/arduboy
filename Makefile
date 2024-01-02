@@ -1,5 +1,5 @@
 CC = avr-gcc
-CFLAGS = -Os -mmcu=atmega32u4 -DF_CPU=16000000UL
+CFLAGS = -Os -mmcu=atmega32u4 -DF_CPU=16000000UL -DMUTE
 OBJCOPY = avr-objcopy
 PROGRAMMER = -c usbasp -p $(MCU)
 PROG=test

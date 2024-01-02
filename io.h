@@ -35,5 +35,6 @@ extern uint8_t controls;
 void io_init(void);
 void disp_init(void);
 void ticks_init(void);
+void sound_init(void);
 
 #endif
