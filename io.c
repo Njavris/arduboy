@@ -126,7 +126,7 @@ void ticks_init(void) {
 
 #define V1_PRESC	64
 #define V2_PRESC	64
-#define NOTE(p, f, l)	((((uint16_t)(16000000 / (p) / 2 / (f))) & 0xfff) | ((l) << 1 << 12)) 
+#define NOTE(p, f, l)	((((uint16_t)(16000000 / (p) / 2 / (f))) & 0xfff) | ((l) << 12)) 
 #define VOICE1(f)	{ OCR3A = (f); TCNT3 = 0; }
 #define VOICE2(f)	{ OCR4C = (f); TCNT4 = 0; }
 
@@ -136,31 +136,29 @@ Voice 1 - 16 bit	0-65535
 */
 
 void sound_init(void) {
+#ifndef MUTE
 	// OC4A OC3A
 	DDRC |= SPK_P | SPK_N;
 //	PORTC |= SPK_P | SPK_N; 
 
-#ifndef MUTE
 	TCCR3A = BIT(COM3A0);
-#endif
 	TCCR3B = BIT(WGM32) | BIT(CS31) | BIT(CS30);
 	TCNT3 = 0;
 	OCR3A = 0;
 
-#ifndef MUTE
 	TCCR4A = BIT(COM4A0);
-#endif
 	TCCR4B = BIT(PWM4X) | BIT(CS42) | BIT(CS41) | BIT(CS40);
 	TCCR4D = BIT(WGM40);
 	TCNT4 = 0;
 	TC4H = 0;
 	OCR4A = 0;
 	OCR4C = 0;
+#endif
 }
 
 #include "notes.h"
 
-uint16_t score[] =  {
+uint16_t score_v1[] =  {
 	NOTE(V1_PRESC, D4, 4), NOTE(V1_PRESC, E4, 4), NOTE(V1_PRESC, F4, 4), NOTE(V1_PRESC, G4, 4),
 	NOTE(V1_PRESC, A4, 4), NOTE(V1_PRESC, F4, 4), NOTE(V1_PRESC, D4, 4), NOTE(V1_PRESC, F4, 4),
 	NOTE(V1_PRESC, A4, 2), NOTE(V1_PRESC, B4, 2),
@@ -168,27 +166,52 @@ uint16_t score[] =  {
 	NOTE(V1_PRESC, A4, 4), NOTE(V1_PRESC, A4, 4), NOTE(V1_PRESC, G4, 4), NOTE(V1_PRESC, E4, 4),
 	NOTE(V1_PRESC, F4, 4), NOTE(V1_PRESC, F4, 4), NOTE(V1_PRESC, D4, 4), NOTE(V1_PRESC, E4, 4),
 	NOTE(V1_PRESC, F4, 2), NOTE(V1_PRESC, E4, 2),
-	NOTE(V1_PRESC, D4, 1), 
+	NOTE(V1_PRESC, D4, 1),
 };
 
-uint16_t cnt = 0;
-uint8_t note = 0;
-uint16_t next = 0;
+uint16_t score_v2[] =  {
+	NOTE(V2_PRESC, A0, 1),
+	NOTE(V2_PRESC, A0, 1),
+	NOTE(V2_PRESC, A0, 2), NOTE(V2_PRESC, D1, 2),
+	NOTE(V2_PRESC, A0, 1),
+	NOTE(V2_PRESC, E1, 1),
+	NOTE(V2_PRESC, A0, 1),
+	NOTE(V2_PRESC, E1, 1),
+	NOTE(V2_PRESC, A0, 1),
+};
 
-ISR(TIMER1_COMPA_vect) {
+static void controls_update(void) {
 	// read inputs
 	controls = (PINF & DIR_MASK) >> 4; // DIR
 	controls |= ((PINE & BIT(BIT_A)) >> BIT_A) << CTRL_BIT_A;
 	controls |= ((PINB & BIT(BIT_B)) >> BIT_B) << CTRL_BIT_B;
 	controls = ~controls;
+}
 
-	if (cnt == next) {
-		VOICE1(score[note] & 0xfff);
-		next = cnt + ((TICKS * 8) / (score[note] >> 12));
-		note++;
-		if (note >= sizeof(score) / sizeof(score[0])) {
-			note = 0;
-		}
+static uint8_t nv1 = 0, nv2 = 0, cnt1 = 0, cnt2 = 0;
+static void sound_tick(void) {
+	if (!cnt1) {
+		if (nv1 >= sizeof(score_v1)/sizeof(score_v1[0]))
+			nv1 = 0;
+		uint16_t val = score_v1[nv1++];
+		VOICE1(val & 0xfff);
+		cnt1 = TICKS / ((val >> 12) & 0xf);
 	}
-	cnt ++;
+	if (!cnt2) {
+		if (nv2 >= sizeof(score_v2)/sizeof(score_v2[0]))
+			nv2 = 0;
+		uint16_t val = score_v2[nv2++];
+		VOICE2(val & 0xfff);
+		cnt2 = TICKS / ((val >> 12) & 0xf);
+	}
+	cnt1 --;
+	cnt2 --;
+}
+
+static uint16_t ticks = 0;
+ISR(TIMER1_COMPA_vect) {
+	controls_update();
+	if (!(ticks % 4)) 
+		sound_tick();
+	ticks ++;
 }
